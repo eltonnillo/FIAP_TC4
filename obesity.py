@@ -25,70 +25,67 @@ pipeline_modelo = carrega_pipeline()
 # Funções para a formatação dos dados categóricos obtidos via Streamlit para o formato esperado pelo pipeline
 
 def converte_binarios(df):
-
+    # Converte Sim/Não em 1/0 para colunas binárias
     binarios = ['historico_familiar','come_alimentos_caloricos','fuma','monitora_calorias_consumidas']
-
     for coluna in binarios:
         df[coluna] = df[coluna].apply(lambda x: 1 if x == 'Sim' else 0)
-
-    print(f'Campos {binarios} convertidos para binário. Sim = 1, Não = 0')
+    #print(f'Campos {binarios} convertidos para binário. Sim = 1, Não = 0')
     return df
 
 def converte_genero(df):
-
+    # Mapeamento do Gênero: Mulher=1, Homem=0
     df['genero'] = df['genero'].apply(lambda x: 1 if x == 'Mulher' else 0)
-    print('Campo de genero convertido para binário. Mulher = 1, Homem = 0')
+    #print('Campo de genero convertido para binário. Mulher = 1, Homem = 0')
     return df
 
 def converte_categoricos (df):
-
+    # Mapeamento: Não=0, Algumas vezes=1, Frequentemente=2, Sempre=3
     categoricos = ['come_entre_refeicoes', 'consome_alcool']
-
     dict = {    'Não' : 0,
                 'Algumas vezes' : 1,
                 'Frequentemente' : 2,
                 'Sempre' : 3
 }
-
     for col in categoricos:
         df[col] = df[col].map(dict)
-
-    print(f'Campos categóricos {categoricos} convertidos.')
+    #print(f'Campos categóricos {categoricos} convertidos.')
     return df
 
 def converte_costuma_comer_vegetais (df):
-
+    # Mapeamento: Raramente=0, Às vezes=1, Sempre=2
     categoricos = ['costuma_comer_vegetais']
-
     dict = {    'Raramente' : 0,
                 'Às vezes' : 1,
                 'Sempre' : 2
 }
-
     for col in categoricos:
         df[col] = df[col].map(dict)
-
-    print(f'Campos categóricos (vegetais) {categoricos} convertidos.')
+    #print(f'Campos categóricos (vegetais) {categoricos} convertidos.')
     return df
 
 
 # Configuração da Página
 st.set_page_config(
     page_title="Preditor de Obesidade", # Título que aparece na aba do navegador
-    page_icon="⚖️",                      # Ícone na aba do navegador (pode ser um emoji ou caminho para um arquivo)
+    page_icon="🏥",                      # Ícone na aba do navegador (pode ser um emoji ou caminho para um arquivo)
     layout="wide",                       # Define o layout para ocupar toda a largura da tela
     initial_sidebar_state="auto"         # Define o estado inicial da barra lateral
 )
 
 # Título Principal
-st.title("⚖️ Preditor de Nível de Obesidade")
+st.title("🏥 Ferramenta de Auxílio ao Diagnóstico de Obesidade")
+st.markdown("---") 
 
-# Descrição/Subtítulo
+# Descrição/Subtítulo (Ajustado com o contexto do desafio)
 st.markdown(
     """
-    Este aplicativo utiliza um modelo de Machine Learning (Random Forest) 
-    para prever o nível de obesidade de um indivíduo com base em dados antropométricos e hábitos de vida.
-    **Preencha os campos abaixo para obter a previsão:**
+    #### **Contexto Médico:**
+    Desenvolvido para auxiliar a equipe médica, este sistema utiliza um modelo de Machine Learning 
+    para prever o nível de obesidade de um indivíduo. A obesidade é uma condição multifatorial 
+    que prejudica a saúde, e este modelo integra dados antropométricos, genéticos e comportamentais 
+    para um **pré-diagnóstico rápido**.
+
+    **Instruções:** Preencha os campos abaixo com as informações do paciente para obter o diagnóstico preditivo.
     """
 )
 
@@ -102,7 +99,7 @@ col1, col2, col3 = st.columns(3)
 
 with col1:
 
-    st.subheader("Dados Básicos")
+    st.subheader("Dados Básicos (paciente)")
 
     idade = st.number_input("Idade (anos)", min_value=18, max_value=120, value=25, step=1)
 
@@ -152,7 +149,7 @@ with col3:
 st.divider() # Linha separadora antes do botão
 
 # Botão de Previsão
-if st.button("Prever Nível de Obesidade"):
+if st.button("DIAGNÓSTICO PREDITIVO (Prever Obesidade)", type="primary"):
     if pipeline_modelo is not None:
         # Criação do DataFrame com os dados de entrada
         dados_entrada = pd.DataFrame({
@@ -181,22 +178,47 @@ if st.button("Prever Nível de Obesidade"):
         dados_entrada = converte_costuma_comer_vegetais(dados_entrada)
 
         # Realiza a previsão usando o pipeline carregado
+        # O pipeline deve cuidar do OHE/Label Encoding restante e Scaling
         previsao = pipeline_modelo.predict(dados_entrada)
 
-        # Mapeamento da previsão para rótulos legíveis
+         # Mapeamento da previsão para rótulos legíveis
         mapa_obesidade = {
-            0: "Abaixo do Peso",
-            1: "Peso Normal",
-            2: "Sobrepeso I",
-            3: "Sobrepeso II",
-            4: "Obesidade Grau I",
-            5: "Obesidade Grau II",
-            6: "Obesidade Grau III"
+            0: "Abaixo do Peso (Risco Mínimo)",
+            1: "Peso Normal (Saudável)",
+            2: "Sobrepeso I (Atenção)",
+            3: "Sobrepeso II (Risco Moderado)",
+            4: "Obesidade Grau I (Risco Alto)",
+            5: "Obesidade Grau II (Risco Crítico)",
+            6: "Obesidade Grau III (Risco Máximo)"
+        }
+        
+        # Definições resumidas dos graus de obesidade
+        mapa_definicoes = {
+            0: "A pessoa pode estar com peso abaixo do ideal. Embora o risco de doenças crônicas relacionadas à obesidade seja baixo, é crucial investigar se há problemas nutricionais ou outras condições médicas subjacentes que causem o baixo peso. Uma avaliação nutricional completa é recomendada.",
+            1: "O peso do indivíduo é classificado como normal (saudável). Isso indica um risco reduzido de complicações de saúde associadas ao excesso de peso. A manutenção de um estilo de vida equilibrado e a monitoração periódica são a melhor conduta.",
+            2: "A pessoa está classificada com Sobrepeso Grau I. Esta é a primeira categoria de excesso de peso. O acúmulo de gordura corporal, embora ainda não seja considerado obesidade, exige atenção e ajustes no estilo de vida para evitar a progressão para graus mais severos e o aumento do risco de comorbidades.",
+            3: "O indivíduo está com Sobrepeso Grau II, indicando um risco moderado de desenvolver condições de saúde associadas ao excesso de peso. A intervenção médica, nutricional e a incentivo à atividade física são fortemente recomendados neste estágio para a reversão do quadro.",
+            4: "A classificação aponta para Obesidade Grau I. Este grau representa um risco alto para a saúde, aumentando a probabilidade de doenças cardiovasculares, diabetes tipo 2 e outras comorbidades. É fundamental iniciar um plano de tratamento e acompanhamento médico e multiprofissional (nutricionista, educador físico).",
+            5: "O resultado indica Obesidade Grau II. Esta condição é considerada de alto risco e clinicamente significativa. Requer atenção imediata e um plano de tratamento intensivo e monitorado, com foco na perda de peso sustentável para reduzir o risco de complicações graves à saúde.",
+            6: "A classificação de Obesidade Grau III (Obesidade Mórbida) representa o maior risco à saúde, com severas implicações para a qualidade de vida e longevidade. O tratamento é urgente e pode envolver intervenções médicas, cirúrgicas e acompanhamento contínuo de uma equipe de saúde especializada."
         }
 
         nivel_obesidade = mapa_obesidade.get(previsao[0], "Desconhecido")
+        texto_definicao = mapa_definicoes.get(previsao[0], "Não foi possível obter uma definição detalhada para este resultado.")
 
-        # Exibe o resultado da previsão
-        st.success(f"O nível de obesidade previsto é: **{nivel_obesidade}**")
+        st.markdown("---")
+        
+        # Exibe o resultado da previsão com a definição (substituindo o sucesso/warning/error)
+        
+        if previsao[0] <= 1:
+            st.success(f"### Previsão: **{nivel_obesidade}**")
+            st.markdown(f"**Análise:** {texto_definicao}")
+        elif previsao[0] <= 3:
+            st.warning(f"### Previsão: **{nivel_obesidade}** (Requer Acompanhamento)")
+            st.markdown(f"**Análise:** {texto_definicao}")
+        else:
+            st.error(f"### Previsão: **{nivel_obesidade}** (URGENTE: Risco à Saúde)")
+            st.markdown(f"**Análise:** {texto_definicao}")
+            
     else:
         st.error("O modelo não está disponível no momento. Tente novamente mais tarde.")
